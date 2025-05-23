@@ -104,7 +104,7 @@ O bot está configurado para usar os seguintes IDs de canais:
 
 ```
 📦 Canal de Coletas: 1373308437684813865
-💰 Canal de Vendas: 1373305755465158677  
+💰 Canal de Vendas: 1373300281730924624  
 🎯 Canal de Solicitações: 1373308437684813865
 📢 Notificações Admin (Coletas): 1374559903414227155
 📢 Notificações Admin (Vendas): 1374613709770723440

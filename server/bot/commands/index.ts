@@ -4,9 +4,9 @@ import { createSaleEmbed } from '../embeds/saleEmbed';
 import { createRequestSetEmbed } from '../embeds/requestSetEmbed';
 
 const CHANNELS = {
-  COLLECTION: '1373308437684813865',
-  SALE: '1373305755465158677',
-  SET_REQUEST: '1373308437684813865', // Same as collection channel
+  COLLECTION: '1373300281730924624',
+  SALE: '1373300281730924624',
+  SET_REQUEST: '1373308437684813865',
 };
 
 export async function setupEmbeds(client: Client) {
