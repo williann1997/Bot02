@@ -3,6 +3,7 @@ import { setupEmbeds } from './commands/index';
 import { handleCollectionSubmit } from './handlers/collectionHandler';
 import { handleSaleSubmit } from './handlers/saleHandler';
 import { handleSetRequest, handleMemberDecision } from './handlers/setHandler';
+import { updateMemberNickname } from './utils/nicknames';
 
 export class DiscordBot {
   private client: Client;
@@ -23,6 +24,36 @@ export class DiscordBot {
     this.client.once(Events.ClientReady, () => {
       console.log(`Bot logado como ${this.client.user?.tag}!`);
       setupEmbeds(this.client);
+    });
+
+    // Atualiza apelidos quando membros recebem/perdem cargos
+    this.client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
+      try {
+        // Verifica se houve mudança nos cargos
+        const oldRoles = oldMember.roles.cache;
+        const newRoles = newMember.roles.cache;
+        
+        if (oldRoles.size !== newRoles.size || 
+            !oldRoles.every(role => newRoles.has(role.id))) {
+          console.log(`🔄 Atualizando apelido de ${newMember.user.username} após mudança de cargo`);
+          await updateMemberNickname(newMember);
+        }
+      } catch (error) {
+        console.error('Erro ao atualizar apelido após mudança de cargo:', error);
+      }
+    });
+
+    // Atualiza apelido quando novos membros entram
+    this.client.on(Events.GuildMemberAdd, async (member) => {
+      try {
+        console.log(`🆕 Novo membro: ${member.user.username}`);
+        // Aguarda um pouco para os cargos serem atribuídos
+        setTimeout(async () => {
+          await updateMemberNickname(member);
+        }, 2000);
+      } catch (error) {
+        console.error('Erro ao atualizar apelido de novo membro:', error);
+      }
     });
 
     // Handle button interactions
