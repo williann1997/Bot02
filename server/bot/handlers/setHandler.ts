@@ -1,7 +1,10 @@
 import { 
   ButtonInteraction, 
   EmbedBuilder,
-  TextChannel
+  TextChannel,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle
 } from 'discord.js';
 import { storage } from '../../storage';
 
@@ -46,6 +49,95 @@ export async function handleSetRequest(interaction: ButtonInteraction) {
   }
 }
 
+export async function handleMemberDecision(interaction: ButtonInteraction) {
+  try {
+    const customId = interaction.customId;
+    const [action, , userId] = customId.split('_'); // accept_member_123 or reject_member_123
+    
+    if (action === 'accept') {
+      // Update embed to show accepted
+      const acceptedEmbed = new EmbedBuilder()
+        .setTitle('✅ Membro Aceito!')
+        .setDescription(`O usuário <@${userId}> foi aceito na Máfia do Vinhedo!`)
+        .addFields(
+          { name: '👤 Administrador', value: interaction.user.username, inline: true },
+          { name: '📅 Data da Decisão', value: new Date().toLocaleString('pt-BR'), inline: true },
+          { name: '🎯 Status', value: '**APROVADO** - Novo membro da família!', inline: false }
+        )
+        .setColor(0x10B981) // Green
+        .setTimestamp();
+
+      await interaction.update({
+        embeds: [acceptedEmbed],
+        components: [] // Remove buttons
+      });
+
+      // Send DM to accepted user
+      try {
+        const user = await interaction.client.users.fetch(userId);
+        const dmEmbed = new EmbedBuilder()
+          .setTitle('🎉 Bem-vindo à Máfia do Vinhedo!')
+          .setDescription('Parabéns! Sua solicitação foi **APROVADA**!')
+          .addFields(
+            { name: '🔫 Acesso Liberado', value: 'Você agora tem acesso às melhores munições e territórios exclusivos!', inline: false },
+            { name: '💰 Próximos Passos', value: 'Entre em contato com a liderança para receber suas primeiras missões e orientações.', inline: false }
+          )
+          .setColor(0x10B981)
+          .setFooter({ text: 'Máfia do Vinhedo • Família' })
+          .setTimestamp();
+
+        await user.send({ embeds: [dmEmbed] });
+      } catch (dmError) {
+        console.log('Não foi possível enviar DM para o usuário aceito');
+      }
+
+    } else if (action === 'reject') {
+      // Update embed to show rejected
+      const rejectedEmbed = new EmbedBuilder()
+        .setTitle('❌ Solicitação Rejeitada')
+        .setDescription(`A solicitação do usuário <@${userId}> foi rejeitada.`)
+        .addFields(
+          { name: '👤 Administrador', value: interaction.user.username, inline: true },
+          { name: '📅 Data da Decisão', value: new Date().toLocaleString('pt-BR'), inline: true },
+          { name: '🎯 Status', value: '**REJEITADO** - Não atende aos critérios', inline: false }
+        )
+        .setColor(0xEF4444) // Red
+        .setTimestamp();
+
+      await interaction.update({
+        embeds: [rejectedEmbed],
+        components: [] // Remove buttons
+      });
+
+      // Send DM to rejected user
+      try {
+        const user = await interaction.client.users.fetch(userId);
+        const dmEmbed = new EmbedBuilder()
+          .setTitle('❌ Solicitação Não Aprovada')
+          .setDescription('Infelizmente, sua solicitação para entrar na Máfia do Vinhedo não foi aprovada no momento.')
+          .addFields(
+            { name: '🔄 Tente Novamente', value: 'Você pode tentar novamente no futuro após ganhar mais experiência no servidor.', inline: false },
+            { name: '💼 Dicas', value: 'Continue participando das atividades do servidor e demonstre seu comprometimento.', inline: false }
+          )
+          .setColor(0xEF4444)
+          .setFooter({ text: 'Máfia do Vinhedo' })
+          .setTimestamp();
+
+        await user.send({ embeds: [dmEmbed] });
+      } catch (dmError) {
+        console.log('Não foi possível enviar DM para o usuário rejeitado');
+      }
+    }
+
+  } catch (error) {
+    console.error('Erro ao processar decisão sobre membro:', error);
+    await interaction.reply({
+      content: '❌ Ocorreu um erro ao processar a decisão.',
+      ephemeral: true,
+    });
+  }
+}
+
 async function sendAdminNotification(
   interaction: ButtonInteraction,
   setRequest: any
@@ -68,9 +160,22 @@ async function sendAdminNotification(
         .setFooter({ text: 'Sistema de Solicitações' })
         .setTimestamp();
 
+      const actionRow = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId(`accept_member_${interaction.user.id}`)
+            .setLabel('✅ Aceitar')
+            .setStyle(ButtonStyle.Success),
+          new ButtonBuilder()
+            .setCustomId(`reject_member_${interaction.user.id}`)
+            .setLabel('❌ Rejeitar')
+            .setStyle(ButtonStyle.Danger)
+        );
+
       await adminChannel.send({
         content: '@here Nova solicitação de entrada!',
         embeds: [notificationEmbed],
+        components: [actionRow]
       });
     }
   } catch (error) {

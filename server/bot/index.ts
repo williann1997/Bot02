@@ -2,7 +2,7 @@ import { Client, GatewayIntentBits, Events } from 'discord.js';
 import { setupEmbeds } from './commands/index';
 import { handleCollectionSubmit } from './handlers/collectionHandler';
 import { handleSaleSubmit } from './handlers/saleHandler';
-import { handleSetRequest } from './handlers/setHandler';
+import { handleSetRequest, handleMemberDecision } from './handlers/setHandler';
 
 export class DiscordBot {
   private client: Client;
@@ -31,16 +31,14 @@ export class DiscordBot {
         if (interaction.isButton()) {
           const { customId } = interaction;
 
-          switch (customId) {
-            case 'register_collection':
-              await handleCollectionSubmit(interaction);
-              break;
-            case 'register_sale':
-              await handleSaleSubmit(interaction);
-              break;
-            case 'request_set':
-              await handleSetRequest(interaction);
-              break;
+          if (customId === 'register_collection') {
+            await handleCollectionSubmit(interaction);
+          } else if (customId === 'register_sale') {
+            await handleSaleSubmit(interaction);
+          } else if (customId === 'request_set') {
+            await handleSetRequest(interaction);
+          } else if (customId.startsWith('accept_member_') || customId.startsWith('reject_member_')) {
+            await handleMemberDecision(interaction);
           }
         }
 
